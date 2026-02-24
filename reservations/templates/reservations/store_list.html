@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>店舗一覧 | 省人化店舗システム</title>
+</head>
+<body>
+    <h1>店舗一覧</h1>
+    
+    <ul>
+        {% for store in stores %}
+            <li>
+                <strong>{{ store.name }}</strong> (最大収容人数: {{ store.capacity }}人)
+            </li>
+        {% empty %}
+            <li>現在、登録されている店舗はありません。</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

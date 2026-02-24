@@ -23,9 +23,6 @@
 ## ER図
 
 ```mermaid
-***
-title: "省人化店舗運営システム MVP"
-***
 erDiagram
     CustomUser ||--o{ Reservation : "1人のユーザーが複数の予約を持つ"
     Store ||--o{ Reservation : "1店舗に複数の予約が紐づく"
@@ -34,7 +31,6 @@ erDiagram
         int id PK "主キー（自動生成）"
         string username "ユーザー名"
         string email "メールアドレス"
-        string password "パスワード（ハッシュ）"
         string first_name "名"
         string last_name "姓"
         string phone_number "電話番号（SMS認証用）"
@@ -52,15 +48,16 @@ erDiagram
         int store_id FK "Store.id"
         datetime start_time "予約開始日時"
         datetime end_time "予約終了日時"
-        boolean is_paid "擬似決済フラグ（default: False）"
-        uuid qr_token UK "QRコード用トークン（自動生成・一意）"
-        string otp_code "ワンタイムパスワード（6桁・チェックイン時生成）"
-        datetime otp_expires_at "OTP有効期限（発行から2分後）"
-        boolean otp_is_used "OTP使用済みフラグ（default: False）"
-        string status "RESERVED / CHECKED_IN / CHECKED_OUT / CANCELLED"
-        datetime created_at "予約作成日時（自動記録）"
+        boolean is_paid "擬似決済フラグ"
+        uuid qr_token UK "QRコード用トークン（一意）"
+        string otp_code "OTP（6桁）"
+        datetime otp_expires_at "OTP有効期限"
+        boolean otp_is_used "OTP使用済み"
+        string status "RESERVED/CHECKED_IN/CHECKED_OUT/CANCELLED"
+        datetime created_at "作成日時"
     }
 ```
+
 
 
 ## セットアップ

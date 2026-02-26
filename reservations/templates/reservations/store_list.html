@@ -1,3 +1,16 @@
+<div style="text-align: right; padding: 10px; background-color: #f0f0f0;">
+    {% if user.is_authenticated %}
+        <span>こんにちは、{{ user.username }}さん！</span>
+        <form action="{% url 'accounts:logout' %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">ログアウト</button>
+        </form>
+    {% else %}
+        <a href="{% url 'accounts:login' %}">ログイン</a> | 
+        <a href="{% url 'accounts:signup' %}">新規登録</a>
+    {% endif %}
+</div>
+<hr>
 <!DOCTYPE html>
 <html lang="ja">
 <head>

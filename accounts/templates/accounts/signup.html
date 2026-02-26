@@ -1,0 +1,14 @@
+<h2>新規登録</h2>
+
+{% if form.errors %}
+    <div style="color: red;">
+        {{ form.non_field_errors }}
+    </div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">登録する</button>
+</form>
+<p>すでにアカウントをお持ちですか？ <a href="{% url 'accounts:login' %}">ログインはこちら</a></p>

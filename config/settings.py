@@ -105,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ja"
 
 TIME_ZONE = "Asia/Tokyo"
 
@@ -121,3 +121,7 @@ STATIC_URL = "static/"
 
 # 追記
 AUTH_USER_MODEL = "accounts.CustomUser"
+
+# ログイン成功時、店舗一覧ページ（reservationsのstore_list）に自動で飛ばす
+LOGIN_REDIRECT_URL = "reservations:store_list"
+LOGOUT_REDIRECT_URL = "reservations:store_list"

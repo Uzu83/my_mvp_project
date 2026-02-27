@@ -1,33 +1,47 @@
-<div style="text-align: right; padding: 10px; background-color: #f0f0f0;">
-    {% if user.is_authenticated %}
-        <span>こんにちは、{{ user.username }}さん！</span>
-        <form action="{% url 'accounts:logout' %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit">ログアウト</button>
-        </form>
-    {% else %}
-        <a href="{% url 'accounts:login' %}">ログイン</a> | 
-        <a href="{% url 'accounts:signup' %}">新規登録</a>
-    {% endif %}
-</div>
-<hr>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <title>店舗一覧 | 省人化店舗システム</title>
 </head>
-<body>
-    <h1>店舗一覧</h1>
-    
-    <ul>
-        {% for store in stores %}
-            <li>
-                <strong>{{ store.name }}</strong> (最大収容人数: {{ store.capacity }}人)
-            </li>
-        {% empty %}
-            <li>現在、登録されている店舗はありません。</li>
-        {% endfor %}
-    </ul>
+<body style="margin: 0; font-family: sans-serif;">
+
+    <div style="text-align: right; padding: 10px; background-color: #f0f0f0;">
+        {% if user.is_authenticated %}
+            <span>こんにちは、{{ user.username }}さん！</span>
+            
+            <a href="{% url 'reservations:my_reservations' %}" style="margin: 0 15px; text-decoration: none; font-weight: bold; color: #007bff;">📋 予約確認</a>
+            <form action="{% url 'accounts:logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit">ログアウト</button>
+            </form>
+        {% else %}
+            <a href="{% url 'accounts:login' %}">ログイン</a> | 
+            <a href="{% url 'accounts:signup' %}">新規登録</a>
+        {% endif %}
+    </div>
+
+    <div style="padding: 20px;">
+        <h1>店舗一覧</h1>
+        
+        <div style="margin: 20px 0;">
+            <a href="{% url 'reservations:create_reservation' %}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; font-weight: bold; border-radius: 5px;">
+                ＋ 新規予約を作成する
+            </a>
+        </div>
+        
+        <hr>
+
+        <ul>
+            {% for store in stores %}
+                <li>
+                    <strong>{{ store.name }}</strong> (最大収容人数: {{ store.capacity }}人)
+                </li>
+            {% empty %}
+                <li>現在、登録されている店舗はありません。</li>
+            {% endfor %}
+        </ul>
+    </div>
+
 </body>
 </html>

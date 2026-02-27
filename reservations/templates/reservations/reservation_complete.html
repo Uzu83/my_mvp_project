@@ -1,0 +1,13 @@
+<div style="max-width: 600px; margin: 40px auto; padding: 30px; text-align: center; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <h2 style="color: #28a745;">✅ 予約が完了しました！</h2>
+    <p>ご予約ありがとうございます。当日は以下のQRトークン（予約番号）をご提示ください。</p>
+    
+    <div style="margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+        <span style="font-size: 0.9em; color: #666;">あなたのQRトークン</span><br>
+        <strong style="font-size: 1.2em; color: #d9534f; font-family: monospace;">{{ reservation.qr_token }}</strong>
+    </div>
+
+    <a href="{% url 'reservations:store_list' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+        店舗一覧に戻る
+    </a>
+</div>

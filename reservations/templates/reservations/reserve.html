@@ -1,0 +1,18 @@
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2>📅 予約作成</h2>
+    <p>店舗と日時を指定して、予約を完了してください。</p>
+
+    {% if form.errors %}
+        <div style="color: red;">入力内容にエラーがあります。</div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer;">
+            予約を確定する（擬似決済）
+        </button>
+    </form>
+    <br>
+    <a href="{% url 'reservations:store_list' %}">← 店舗一覧に戻る</a>
+</div>

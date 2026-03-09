@@ -1,4 +1,5 @@
 # 省人化店舗運営システム MVP
+[![CI](https://github.com/Uzu83/my_mvp_project/actions/workflows/ci.yml/badge.svg)](https://github.com/Uzu83/my_mvp_project/actions/workflows/ci.yml)
 
 🚀 **Live Demo:** https://my-mvp-app-w6x2.onrender.com
 > RenderのFreeプランのため、初回アクセス時は起動まで約1分かかる場合があります。

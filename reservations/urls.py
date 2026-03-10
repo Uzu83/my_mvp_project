@@ -10,4 +10,5 @@ urlpatterns = [
     path("complete/<int:pk>/", views.reservation_complete, name="reservation_complete"),
     path("my/", views.my_reservations, name="my_reservations"),
     path("cancel/<int:pk>/", views.cancel_reservation, name="cancel_reservation"),
+    path("qr/<int:pk>/", views.qr_detail, name="qr_detail"),
 ]

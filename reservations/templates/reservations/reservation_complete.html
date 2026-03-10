@@ -7,6 +7,9 @@
         <strong style="font-size: 1.2em; color: #d9534f; font-family: monospace;">{{ reservation.qr_token }}</strong>
     </div>
 
+    <a href="{% url 'reservations:qr_detail' reservation.pk %}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; margin-right: 10px;">
+        QRコードを表示
+    </a>
     <a href="{% url 'reservations:store_list' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
         店舗一覧に戻る
     </a>

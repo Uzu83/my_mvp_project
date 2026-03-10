@@ -1,3 +1,7 @@
+import base64
+import io
+
+import qrcode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
@@ -47,6 +51,19 @@ def my_reservations(request):
     return render(
         request, "reservations/my_reservations.html", {"reservations": reservations}
     )
+
+
+@login_required
+def qr_detail(request, pk):
+    reservation = get_object_or_404(Reservation, pk=pk, user=request.user)
+    img = qrcode.make(str(reservation.qr_token))
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    qr_b64 = base64.b64encode(buffer.getvalue()).decode()
+    return render(request, "reservations/qr_code_detail.html", {
+        "reservation": reservation,
+        "qr_b64": qr_b64,
+    })
 
 
 @login_required

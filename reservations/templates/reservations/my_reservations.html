@@ -6,6 +6,14 @@
 </head>
 <body style="max-width:600px; margin:40px auto; padding:20px; font-family: sans-serif;">
     <h2>📋 あなたの予約一覧</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="padding: 10px 15px; margin-bottom: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
     
     {% for r in reservations %}
         <div style="border:1px solid #ddd; padding:15px; margin:10px 0; border-radius:8px; background-color: #f9f9f9;">
@@ -19,7 +27,7 @@
                 ステータス：<strong>{{ r.get_status_display }}</strong>
             </div>
             {% if r.status == 'RESERVED' %}
-            <form method="post" action="{% url 'reservations:cancel_reservation' r.pk %}" style="margin-top: 10px;">
+            <form method="post" action="{% url 'reservations:cancel_reservation' r.pk %}" style="margin-top: 10px;" onsubmit="return confirm('本当にキャンセルしますか？この操作は取り消せません');">
                 {% csrf_token %}
                 <button type="submit" style="padding: 6px 14px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     キャンセル

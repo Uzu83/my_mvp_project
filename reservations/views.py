@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -58,5 +59,6 @@ def cancel_reservation(request, pk):
     if reservation.status == "RESERVED":
         reservation.status = "CANCELLED"
         reservation.save()
+        messages.success(request, "キャンセルしました")
 
     return redirect("reservations:my_reservations")

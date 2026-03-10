@@ -56,6 +56,9 @@ def my_reservations(request):
 @login_required
 def qr_detail(request, pk):
     reservation = get_object_or_404(Reservation, pk=pk, user=request.user)
+    if reservation.status == "CANCELLED":
+        messages.warning(request, "キャンセル済みの予約です")
+        return redirect("reservations:my_reservations")
     img = qrcode.make(str(reservation.qr_token))
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")

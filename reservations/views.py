@@ -46,3 +46,17 @@ def my_reservations(request):
     return render(
         request, "reservations/my_reservations.html", {"reservations": reservations}
     )
+
+
+@login_required
+def cancel_reservation(request, pk):
+    if request.method != "POST":
+        return redirect("reservations:my_reservations")
+
+    reservation = get_object_or_404(Reservation, pk=pk, user=request.user)
+
+    if reservation.status == "RESERVED":
+        reservation.status = "CANCELLED"
+        reservation.save()
+
+    return redirect("reservations:my_reservations")

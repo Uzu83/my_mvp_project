@@ -15,6 +15,17 @@
             <div style="margin-top: 10px;">
                 QRトークン：<code style="background-color: #e9ecef; padding: 2px 5px; border-radius: 3px;">{{ r.qr_token }}</code>
             </div>
+            <div style="margin-top: 8px;">
+                ステータス：<strong>{{ r.get_status_display }}</strong>
+            </div>
+            {% if r.status == 'RESERVED' %}
+            <form method="post" action="{% url 'reservations:cancel_reservation' r.pk %}" style="margin-top: 10px;">
+                {% csrf_token %}
+                <button type="submit" style="padding: 6px 14px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    キャンセル
+                </button>
+            </form>
+            {% endif %}
         </div>
     {% empty %}
         <p>まだ予約はありません。</p>

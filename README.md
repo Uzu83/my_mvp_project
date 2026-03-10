@@ -15,11 +15,12 @@
 - `@login_required` によるアクセス制限ガード
 - 店舗一覧の表示・予約作成（Create）・予約一覧確認（Read）
 - 予約確定時のUUID自動生成による QRトークン発行
+- **QRコードチケット表示**（予約完了画面・専用ページでQR画像をインライン表示、ファイル保存なし）
+- **キャンセル機能**（確認ダイアログ付き・RESERVED状態のみ許可・キャンセル済み予約へのQRアクセスをブロック）
 - Django Admin を用いた管理画面
 - Render（PostgreSQL / Gunicorn / WhiteNoise）への本番デプロイ
 
 **🚧 実装予定**
-- 予約変更・キャンセル（Update / Delete）
 - OTPによる実店舗チェックイン認証
 
 ## 技術スタック
@@ -27,6 +28,7 @@
 | カテゴリ | 技術 |
 |---|---|
 | Backend | Python 3.12 / Django 6.0 |
+| QR生成 | qrcode / Pillow（Base64エンコード・メモリ処理） |
 | Database | PostgreSQL（本番） / SQLite3（開発） |
 | Infrastructure | Render (Web Service + PostgreSQL) |
 | Package Manager | uv |
@@ -39,6 +41,17 @@ cd my_mvp_project
 uv sync
 uv run python manage.py migrate
 uv run python manage.py runserver
+```
+
+## テスト実行
+
+```bash
+# 全テスト
+uv run python manage.py test
+
+# アプリ単位
+uv run python manage.py test reservations
+uv run python manage.py test accounts
 ```
 
 ## ER図

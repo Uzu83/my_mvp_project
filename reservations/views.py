@@ -10,6 +10,13 @@ from .forms import ReservationForm
 from .models import Reservation, Store
 
 
+def generate_qr_base64(qr_token):
+    img = qrcode.make(str(qr_token))
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode()
+
+
 # (store_list はそのまま)
 def store_list(request):
     stores = Store.objects.all()
@@ -39,8 +46,9 @@ def create_reservation(request):
 @login_required
 def reservation_complete(request, pk):
     reservation = get_object_or_404(Reservation, pk=pk, user=request.user)
+    qr_b64 = generate_qr_base64(reservation.qr_token)
     return render(
-        request, "reservations/reservation_complete.html", {"reservation": reservation}
+        request, "reservations/reservation_complete.html", {"reservation": reservation, "qr_b64": qr_b64}
     )
 
 
@@ -59,10 +67,7 @@ def qr_detail(request, pk):
     if reservation.status == "CANCELLED":
         messages.warning(request, "キャンセル済みの予約です")
         return redirect("reservations:my_reservations")
-    img = qrcode.make(str(reservation.qr_token))
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    qr_b64 = base64.b64encode(buffer.getvalue()).decode()
+    qr_b64 = generate_qr_base64(reservation.qr_token)
     return render(request, "reservations/qr_code_detail.html", {
         "reservation": reservation,
         "qr_b64": qr_b64,

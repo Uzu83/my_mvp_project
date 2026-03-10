@@ -55,3 +55,24 @@ Django 6.0 / Python 3.12 project with two apps:
 - Static files served via WhiteNoise in production; `STATIC_ROOT = staticfiles/`
 
 **Deployment (Render):** `build.sh` runs `pip install -r requirements.txt`, `collectstatic`, and `migrate`. The `requirements.txt` is the production dependency list; `pyproject.toml`/`uv.lock` are for local development with uv.
+
+**Tech Stack additions:**
+- `qrcode`, `pillow` — QR code generation (added via `uv add`; sync `requirements.txt` with `uv pip freeze > requirements.txt` after adding)
+
+## Coding Patterns
+
+**QR code generation:**
+- Always generate QR images in memory using `io.BytesIO`; never save to disk.
+- Embed as Base64 in templates: `<img src="data:image/png;base64,{{ qr_b64 }}">`.
+- Use the shared helper in `reservations/views.py`:
+  ```python
+  def generate_qr_base64(qr_token):
+      img = qrcode.make(str(qr_token))
+      buffer = io.BytesIO()
+      img.save(buffer, format="PNG")
+      return base64.b64encode(buffer.getvalue()).decode()
+  ```
+
+## Custom Commands
+
+- `/commit` — Create a git commit in Conventional Commits format automatically.

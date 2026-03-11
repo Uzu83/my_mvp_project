@@ -1,10 +1,17 @@
 import base64
+import hmac
 import io
+import re
+import secrets
+from datetime import timedelta
 
 import qrcode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .forms import ReservationForm
 from .models import Reservation, Store
@@ -72,6 +79,106 @@ def qr_detail(request, pk):
         "reservation": reservation,
         "qr_b64": qr_b64,
     })
+
+
+@login_required
+@require_POST
+def generate_otp(request, pk):
+    reservation = get_object_or_404(Reservation, pk=pk, user=request.user)
+    if reservation.status != "RESERVED":
+        messages.warning(request, "この予約はチェックイン操作できません")
+        return redirect("reservations:my_reservations")
+
+    with transaction.atomic():
+        try:
+            reservation = Reservation.objects.select_for_update().get(pk=pk, user=request.user)
+        except Reservation.DoesNotExist:
+            from django.http import Http404
+            raise Http404
+
+        if reservation.status != "RESERVED":
+            messages.warning(request, "この予約はチェックイン操作できません")
+            return redirect("reservations:my_reservations")
+
+        if reservation.otp_failure_count >= 5:
+            messages.error(request, "OTP認証の失敗回数が上限に達しています。管理者にお問い合わせください。")
+            return redirect("reservations:my_reservations")
+
+        now = timezone.now()
+        if (
+            reservation.otp_code is not None
+            and reservation.otp_expires_at is not None
+            and reservation.otp_expires_at > now
+        ):
+            return redirect("reservations:verify_otp", pk=pk)
+
+        reservation.otp_code = f"{secrets.randbelow(1_000_000):06d}"
+        reservation.otp_expires_at = now + timedelta(minutes=2)
+        reservation.otp_is_used = False
+        reservation.save()
+
+    return redirect("reservations:verify_otp", pk=pk)
+
+
+@login_required
+def verify_otp(request, pk):
+    reservation = get_object_or_404(Reservation, pk=pk, user=request.user)
+    if reservation.status != "RESERVED":
+        messages.warning(request, "この予約はチェックイン操作できません")
+        return redirect("reservations:my_reservations")
+
+    if request.method != "POST":
+        return render(request, "reservations/verify_otp.html", {"reservation": reservation})
+
+    user_input = request.POST.get("otp_code", "").strip()
+
+    if not re.fullmatch(r"\d{6}", user_input):
+        messages.error(request, "OTPは6桁の数字で入力してください")
+        return redirect("reservations:verify_otp", pk=pk)
+
+    with transaction.atomic():
+        try:
+            reservation = Reservation.objects.select_for_update().get(pk=pk, user=request.user)
+        except Reservation.DoesNotExist:
+            from django.http import Http404
+            raise Http404
+
+        if reservation.status != "RESERVED":
+            messages.warning(request, "この予約はチェックイン操作できません")
+            return redirect("reservations:my_reservations")
+
+        now = timezone.now()
+        otp_valid = (
+            reservation.otp_expires_at is not None
+            and reservation.otp_code is not None
+            and reservation.otp_expires_at > now
+        )
+
+        if not otp_valid:
+            messages.error(request, "OTPが無効または期限切れです。再度発行してください。")
+            return redirect("reservations:my_reservations")
+
+        if reservation.otp_is_used:
+            messages.error(request, "このOTPはすでに使用済みです。")
+            return redirect("reservations:my_reservations")
+
+        if reservation.otp_failure_count >= 5:
+            messages.error(request, "OTP認証の失敗回数が上限に達しています。管理者にお問い合わせください。")
+            return redirect("reservations:my_reservations")
+
+        if not hmac.compare_digest(str(reservation.otp_code), str(user_input)):
+            reservation.otp_failure_count += 1
+            reservation.save()
+            messages.error(request, f"OTPが一致しません。（失敗回数: {reservation.otp_failure_count}/5）")
+            return redirect("reservations:verify_otp", pk=pk)
+
+        reservation.status = "CHECKED_IN"
+        reservation.otp_is_used = True
+        reservation.otp_failure_count = 0
+        reservation.save()
+
+    messages.success(request, "チェックインが完了しました。")
+    return redirect("reservations:my_reservations")
 
 
 @login_required

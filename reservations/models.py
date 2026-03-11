@@ -41,6 +41,7 @@ class Reservation(models.Model):
         blank=True, null=True, verbose_name="OTP有効期限"
     )
     otp_is_used = models.BooleanField(default=False, verbose_name="OTP使用済みフラグ")
+    otp_failure_count = models.IntegerField(default=0, verbose_name="OTP認証失敗回数")
 
     status = models.CharField(
         max_length=20,

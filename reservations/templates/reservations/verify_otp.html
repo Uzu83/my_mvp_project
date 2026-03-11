@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>チェックイン - OTP認証</title>
+</head>
+<body style="max-width:480px; margin:40px auto; padding:20px; font-family: sans-serif;">
+    <h2>チェックイン認証</h2>
+    <p style="color: #555;">
+        {{ reservation.store.name }} のチェックインコードを入力してください。<br>
+        コードの有効期限は発行から2分間です。
+    </p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="padding: 10px 15px; margin-bottom: 15px;
+                {% if message.tags == 'error' %}
+                    background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+                {% else %}
+                    background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+                {% endif %}
+                border-radius: 4px;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if debug_otp %}
+        <div style="padding: 10px 15px; margin-bottom: 15px; background-color: #fff3cd; color: #856404; border: 1px solid #ffc107; border-radius: 4px;">
+            [DEBUGモード] 現在のOTP: <strong style="font-family: monospace;">{{ debug_otp }}</strong>
+        </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'reservations:verify_otp' reservation.pk %}">
+        {% csrf_token %}
+        <div style="margin-bottom: 20px;">
+            <label for="otp_code" style="display: block; margin-bottom: 6px; font-weight: bold;">
+                認証コード（6桁）
+            </label>
+            <input
+                type="text"
+                id="otp_code"
+                name="otp_code"
+                inputmode="numeric"
+                pattern="[0-9]{6}"
+                maxlength="6"
+                required
+                placeholder="000000"
+                style="width: 100%; padding: 10px; font-size: 1.4em; letter-spacing: 0.3em; text-align: center; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"
+            >
+        </div>
+        <button type="submit" style="width: 100%; padding: 12px; background-color: #17a2b8; color: white; border: none; border-radius: 4px; font-size: 1em; cursor: pointer;">
+            認証してチェックイン
+        </button>
+    </form>
+
+    <div style="margin-top: 20px;">
+        <a href="{% url 'reservations:my_reservations' %}" style="color: #007bff;">← 予約一覧に戻る</a>
+    </div>
+</body>
+</html>

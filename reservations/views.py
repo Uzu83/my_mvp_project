@@ -128,7 +128,11 @@ def verify_otp(request, pk):
         return redirect("reservations:my_reservations")
 
     if request.method != "POST":
-        return render(request, "reservations/verify_otp.html", {"reservation": reservation})
+        from django.conf import settings
+        ctx = {"reservation": reservation}
+        if settings.DEBUG:
+            ctx["debug_otp"] = reservation.otp_code
+        return render(request, "reservations/verify_otp.html", ctx)
 
     user_input = request.POST.get("otp_code", "").strip()
 

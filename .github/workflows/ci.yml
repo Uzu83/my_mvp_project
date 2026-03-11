@@ -7,10 +7,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+      SECRET_KEY: "ci-dummy-secret-key-not-used-in-production"
+      DEBUG: "True"
     services:
       postgres:
         image: postgres:15
         env:
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: test_db
         options: >-
@@ -29,13 +34,5 @@ jobs:
           enable-cache: "true"
       - name: Install dependencies
         run: uv sync --locked
-      - name: Collect static files
-        env:
-          SECRET_KEY: dummy-secret-key-for-ci
-        run: uv run python manage.py collectstatic --noinput
       - name: Run tests
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
-          SECRET_KEY: dummy-secret-key-for-ci
-          ALLOWED_HOSTS: localhost
-        run: uv run python manage.py test
+        run: uv run python manage.py test --settings=config.test_settings

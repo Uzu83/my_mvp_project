@@ -17,11 +17,34 @@
 - 予約確定時のUUID自動生成による QRトークン発行
 - **QRコードチケット表示**（予約完了画面・専用ページでQR画像をインライン表示、ファイル保存なし）
 - **キャンセル機能**（確認ダイアログ付き・RESERVED状態のみ許可・キャンセル済み予約へのQRアクセスをブロック）
+- **OTPチェックイン認証**（6桁ワンタイムパスワードによる実店舗入店確認・ブルートフォース対策付き）
 - Django Admin を用いた管理画面
 - Render（PostgreSQL / Gunicorn / WhiteNoise）への本番デプロイ
 
-**🚧 実装予定**
-- OTPによる実店舗チェックイン認証
+## 技術的ハイライト
+
+### OTP チェックイン認証の堅牢性
+
+単なる「6桁コードの照合」ではなく、本番運用を意識した多層防御を実装しています。
+
+**暗号・乱数**
+- `secrets.randbelow(1_000_000)` による暗号論的に安全な乱数生成。`random` モジュールは使用しない。
+- `hmac.compare_digest(stored, user_input)` による定数時間比較。`==` 演算子では発生するタイミングサイドチャネル攻撃を防止。
+
+**ブルートフォース対策**
+- `otp_failure_count` カラムで失敗回数を追跡し、**5回でロックアウト**。以降の試行は OTP コードの検証に到達しない。
+- フォーマット不正入力（非6桁・英字混入など）は `re.fullmatch(r"\d{6}", ...)` で弾き、カウンターを増加させない。ブルートフォーススクリプトによるカウンター消費を防ぐ。
+
+**IDOR 防止**
+- 全ての OTP ビューで `get_object_or_404(Reservation, pk=pk, user=request.user)` を使用。他ユーザーの予約 ID を推測しても 404 を返す。
+
+**レースコンディション対策**
+- `transaction.atomic()` + `select_for_update()` をセットで使用し、同一 OTP への並行リクエストによる二重チェックインを防止。本機能の結合テストには SQLite では不十分なため PostgreSQL が必須。
+
+**CI での PostgreSQL 統合テスト**
+- GitHub Actions で `postgres:15` サービスコンテナを起動し、`select_for_update()` の排他制御を含む OTP テストをCIで自動検証。ローカルと本番の差異をパイプラインで早期検出。
+
+---
 
 ## 技術スタック
 
@@ -46,12 +69,16 @@ uv run python manage.py runserver
 ## テスト実行
 
 ```bash
-# 全テスト
+# 全テスト（SQLite / 高速）
 uv run python manage.py test
 
 # アプリ単位
 uv run python manage.py test reservations
 uv run python manage.py test accounts
+
+# OTP テスト（select_for_update の排他制御確認には PostgreSQL が必要）
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/test_db \
+  uv run python manage.py test reservations.tests.test_otp --settings=config.test_settings
 ```
 
 ## ER図
@@ -85,6 +112,7 @@ erDiagram
         string otp_code
         datetime otp_expires_at
         boolean otp_is_used
+        int otp_failure_count
         string status
         datetime created_at
     }

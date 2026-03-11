@@ -43,7 +43,7 @@ Django 6.0 / Python 3.12 project with two apps:
 
 **`reservations/`** — Core business logic. Two models:
 - `Store`: name + capacity
-- `Reservation`: links `CustomUser` → `Store` with `start_time`, `end_time`, `is_paid`, `status` (RESERVED/CHECKED_IN/CHECKED_OUT/CANCELLED), a UUID `qr_token` (auto-generated, immutable), and OTP fields (`otp_code`, `otp_expires_at`, `otp_is_used`) stored directly on the reservation row (no separate table).
+- `Reservation`: links `CustomUser` → `Store` with `start_time`, `end_time`, `is_paid`, `status` (RESERVED/CHECKED_IN/CHECKED_OUT/CANCELLED), a UUID `qr_token` (auto-generated, immutable), and OTP fields (`otp_code`, `otp_expires_at`, `otp_is_used`, `otp_failure_count`) stored directly on the reservation row (no separate table).
 
 **`config/`** — Project settings and root URL config. URL routing: `""` → `reservations.urls`, `"accounts/"` → `accounts.urls`.
 
@@ -72,6 +72,68 @@ Django 6.0 / Python 3.12 project with two apps:
       img.save(buffer, format="PNG")
       return base64.b64encode(buffer.getvalue()).decode()
   ```
+
+## Security Rules
+
+These rules are non-negotiable. Any code that violates them must be rejected regardless of other considerations.
+
+**Timing-safe comparison — always use `hmac.compare_digest`**
+- When comparing secrets (OTP codes, tokens, passwords), NEVER use `==`. Use `hmac.compare_digest(a, b)` exclusively.
+- `==` short-circuits on the first mismatch, leaking timing information that an attacker can exploit to enumerate valid codes character by character.
+
+**Cryptographic randomness — always use `secrets`**
+- Use `secrets.randbelow(n)` for OTP generation. NEVER use `random.randint` or similar non-cryptographic PRNGs.
+
+**Preventing IDOR (Insecure Direct Object Reference)**
+- All views that fetch a specific `Reservation` must include `user=request.user` in the lookup:
+  ```python
+  get_object_or_404(Reservation, pk=pk, user=request.user)
+  ```
+- Omitting this check allows any authenticated user to access or modify another user's data by guessing a PK.
+
+**Atomic DB operations with row-level locking**
+- Whenever updating a row based on its current state (e.g., OTP check-in, failure count increment), ALWAYS use `transaction.atomic()` + `select_for_update()` together:
+  ```python
+  with transaction.atomic():
+      reservation = Reservation.objects.select_for_update().get(pk=pk, user=request.user)
+      # ... read-then-write logic here
+  ```
+- `select_for_update()` alone without `atomic()` has no effect. Using `atomic()` alone without `select_for_update()` does not prevent concurrent reads from seeing stale state.
+- Note: `select_for_update()` degrades to a table lock on SQLite. Use PostgreSQL for accurate behavior in tests.
+
+**Brute-force protection**
+- Never call the secret comparison before checking `otp_failure_count >= 5`. Locking out must happen before the comparison, not after.
+- Format-invalid inputs (non-6-digit strings) must be rejected before entering the DB transaction. This prevents an attacker from burning lockout budget without having a valid-format guess.
+
+## Testing Rules
+
+**Test file layout**
+- Tests live in `reservations/tests/` as a package with an `__init__.py`.
+- Business logic tests: `test_models.py`. OTP and security tests: `test_otp.py`.
+- Do not put tests in `tests.py` at the app root — this conflicts with the `tests/` package.
+
+**PostgreSQL is required for OTP tests**
+- `select_for_update()` behavior is only accurate under PostgreSQL. Run OTP tests with:
+  ```bash
+  DATABASE_URL=postgres://postgres:postgres@localhost:5432/test_db \
+    uv run python manage.py test reservations.tests.test_otp --settings=config.test_settings
+  ```
+- CI runs all tests against PostgreSQL via the `postgres:15` service container. See `.github/workflows/ci.yml`.
+
+**Test naming convention**
+- Test method names must describe the expected outcome, not just the operation:
+  - ✅ `test_lockout_after_5_failures`
+  - ✅ `test_expired_otp_fails`
+  - ❌ `test_otp_verify`
+
+**Use `force_login` for auth in tests**
+- Always use `self.client.force_login(user)` instead of `self.client.login(username=..., password=...)` to avoid coupling tests to the authentication backend.
+
+## Regex Rules
+
+**Always use raw strings for regex patterns**
+- ALWAYS write `r"\d{6}"` not `"\\d{6}"`. The raw-string prefix `r` prevents Python from interpreting backslashes before the regex engine sees the pattern.
+- In this project, the canonical 6-digit OTP pattern is `r"\d{6}"`. Use `re.fullmatch(r"\d{6}", user_input)` — not `re.match`, which does not anchor the end of the string.
 
 ## Custom Commands
 

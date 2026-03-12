@@ -135,6 +135,14 @@ These rules are non-negotiable. Any code that violates them must be rejected reg
 - ALWAYS write `r"\d{6}"` not `"\\d{6}"`. The raw-string prefix `r` prevents Python from interpreting backslashes before the regex engine sees the pattern.
 - In this project, the canonical 6-digit OTP pattern is `r"\d{6}"`. Use `re.fullmatch(r"\d{6}", user_input)` — not `re.match`, which does not anchor the end of the string.
 
+## Branch Naming Conventions（ブランチ命名規則）
+
+ブランチ名は必ず以下のプレフィックスを使用してください。
+
+- `feature/◯◯` — 新機能の開発（例: `feature/otp-checkin`）
+- `fix/◯◯` — バグ修正（例: `fix/otp-lockout-count`）
+- `docs/◯◯` — ドキュメントの更新（例: `docs/claude-md-branch-rules`）
+
 ## Custom Commands
 
 - `/commit` — Create a git commit in Conventional Commits format automatically.
